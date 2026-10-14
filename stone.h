@@ -4,7 +4,13 @@
 
 namespace NStone
 {
-	double getFrequency();
-	int64_t getLastMessageStartTime();
-	int64_t getLastMessageEndTime();
+	struct FrequencySample
+	{
+		int64_t timestamp;
+		double frequence;
+	};
+
+	FrequencySample sampleFrequency();
+	
+	int64_t getLastSignalEdgeTime(int64_t nanoseconds);
 };

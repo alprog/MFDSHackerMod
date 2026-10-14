@@ -1,41 +1,43 @@
 #include "stone.h"
 #include "utils.h"
 
+constexpr int64_t HumanSecond = 1'000'000'000; // nanoseconds
+constexpr int64_t AlienSecond =   806'641'031; // nanoseconds
+constexpr int64_t AlienEpochStartShift = 847'13'462; // nanoseconds (random)
+
 constexpr double HumanHydrogenLine = 1'420'405'751.786; // Hz
+constexpr double AlienHydrogenline = HumanHydrogenLine * AlienSecond / HumanSecond; // Hz
 
-constexpr int32_t AlienHydrogenline = 1'145'757'516; // Hz
-constexpr int32_t AlienSecond = 806641; // microseconds
-constexpr int32_t AlienEpochStartShift = 84713562; // microseconds (random)
+constexpr int64_t CycleLength = 2;
+constexpr int64_t MessageLength = 1;
 
-constexpr int32_t CycleLength = 2;
-constexpr int32_t MessageLength = 1;
-
-int64_t	getGlobalIntervalIndex()
+int64_t	getGlobalIntervalIndex(int64_t nanoseconds)
 {
-	return (GetTimeMicroseconds() - AlienEpochStartShift) / AlienSecond;
+	return (nanoseconds - AlienEpochStartShift) / AlienSecond;
 }
 
-int32_t getCycleIntervalIndex()
+int64_t getIntervalStartTime(int64_t globalIndex)
 {
-	return getGlobalIntervalIndex() % CycleLength;
+	return AlienEpochStartShift + globalIndex * AlienSecond;
 }
 
-int64_t getTimeOfInteral(int64_t index)
+int64_t getCycleIntervalIndex(int64_t nanoseconds)
 {
-	return int64_t(AlienSecond) * index + AlienEpochStartShift;
+	return getGlobalIntervalIndex(nanoseconds) % CycleLength;
 }
 
-double ToHumanFrequency(double alienFrequence)
+double toHumanFrequency(double alienFrequence)
 {
-	constexpr double ratio = static_cast<double>(AlienSecond) / 1'000'000.0;
-	return double(AlienHydrogenline) / ratio;
+	constexpr double ratio = static_cast<double>(AlienSecond) / HumanSecond;
+	return alienFrequence / ratio;
 }
 
-double NStone::getFrequency()
+double getFrequencyAt(int64_t nanoseconds)
 {
-	if (getCycleIntervalIndex() < MessageLength)
+	int64_t index = getCycleIntervalIndex(nanoseconds);
+	if (index < MessageLength)
 	{
-		return ToHumanFrequency(AlienHydrogenline);
+		return toHumanFrequency(AlienHydrogenline + index);
 	}
 	else
 	{
@@ -43,21 +45,27 @@ double NStone::getFrequency()
 	}
 }
 
-int64_t NStone::getLastMessageStartTime()
+NStone::FrequencySample NStone::sampleFrequency()
 {
-	int64_t index = getGlobalIntervalIndex();
-	int64_t cycleStart = index - index % CycleLength;
-	return getTimeOfInteral(cycleStart);
+	int64_t nanoseconds = GetTimeNanoseconds();
+	return { nanoseconds, getFrequencyAt(nanoseconds) };
 }
 
-int64_t NStone::getLastMessageEndTime()
+bool isMessageInterval(int64_t globalIndex)
 {
-	int64_t index = getGlobalIntervalIndex();
-	int64_t cycleStart = index - index % CycleLength;
-	int64_t endInterval = cycleStart + MessageLength;
-	if (index - cycleStart < MessageLength)
+	return globalIndex % CycleLength < MessageLength;
+}
+
+int64_t NStone::getLastSignalEdgeTime(int64_t nanoseconds)
+{
+	int64_t globalIndex = getGlobalIntervalIndex(nanoseconds);
+	int64_t cycleIndex = globalIndex % CycleLength;
+	if (cycleIndex < MessageLength)
 	{
-		endInterval -= CycleLength;
+		return getIntervalStartTime(globalIndex - cycleIndex);
 	}
-	return getTimeOfInteral(endInterval);
+	else
+	{
+		return getIntervalStartTime(globalIndex - cycleIndex + MessageLength);
+	}
 }
