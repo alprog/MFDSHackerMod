@@ -139,11 +139,16 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="MFDSHackerMod.cpp" />
+    <ClCompile Include="client.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="server.cpp" />
     <ClCompile Include="stone.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="client.h" />
+    <ClInclude Include="web.h" />
+    <ClInclude Include="server.h" />
     <ClInclude Include="stone.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
