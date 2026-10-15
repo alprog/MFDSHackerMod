@@ -23,8 +23,6 @@ private:
 
     void AcceptLoop();
     void Handle(uintptr_t client);
-    bool SubscribeReceiver(uintptr_t client);
-    bool SubscribeTransmitter(uintptr_t client);
     std::string TransmitterSend(const std::string& query, std::string& status);
 
     Winsock winsock;

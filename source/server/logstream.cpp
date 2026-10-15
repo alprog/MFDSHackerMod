@@ -10,7 +10,7 @@ LogStream::~LogStream()
     }
 }
 
-bool LogStream::Subscribe(uintptr_t client, const std::string& firstLine)
+bool LogStream::Subscribe(uintptr_t client)
 {
     std::string headers =
         "HTTP/1.1 200 OK\r\n"
@@ -20,7 +20,7 @@ bool LogStream::Subscribe(uintptr_t client, const std::string& firstLine)
         "Connection: close\r\n"
         "\r\n";
     std::lock_guard lock(mutex);
-    if (!SendText(client, headers + firstLine + "\n"))
+    if (!SendText(client, headers))
     {
         return false;
     }

@@ -10,7 +10,7 @@ class LogStream
 public:
     ~LogStream();
 
-    bool Subscribe(uintptr_t client, const std::string& firstLine);
+    bool Subscribe(uintptr_t client);
     void Broadcast(const std::string& line);
 
 private:

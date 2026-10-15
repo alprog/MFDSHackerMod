@@ -61,16 +61,6 @@ static std::string EventLine(EventType type, int64_t timestamp, double param)
     }
 }
 
-static std::string StateLine(const Receiver::State& state)
-{
-    return EventLine(EventType::SignalEdge, state.edgeTime, state.on ? 1.0 : 0.0);
-}
-
-static std::string StateLine(const Transmitter::State& state)
-{
-    return EventLine(EventType::FrequencyChanged, state.changeTime, state.frequency);
-}
-
 Server::Server(World& world, const std::string& host, const std::string& port)
     : world(world), listener(INVALID_SOCKET)
 {
@@ -132,32 +122,13 @@ void Server::OnEvent(EventType type, int64_t timestamp, double param)
     (type == EventType::FrequencyChanged ? transmitterLog : receiverLog).Broadcast(EventLine(type, timestamp, param));
 }
 
-bool Server::SubscribeReceiver(uintptr_t client)
-{
-    bool subscribed = false;
-    world.receiver.WithState([&](const Receiver::State& state)
-    {
-        subscribed = receiverLog.Subscribe(client, StateLine(state));
-    });
-    return subscribed;
-}
-
-bool Server::SubscribeTransmitter(uintptr_t client)
-{
-    bool subscribed = false;
-    world.transmitter.WithState([&](const Transmitter::State& state)
-    {
-        subscribed = transmitterLog.Subscribe(client, StateLine(state));
-    });
-    return subscribed;
-}
-
 std::string Server::Api()
 {
     return
         "  GET /receiver/log                receiver log, endless text/plain\n"
         "  GET /receiver/freq               current receiver frequency in Hz\n"
         "  GET /transmitter/log             transmitter log, endless text/plain\n"
+        "  GET /transmitter/freq            current transmitter frequency in Hz\n"
         "  GET /transmitter/send?freq=<Hz>  transmitter on at this frequency\n"
         "  GET /transmitter/stop            transmitter off\n";
 }
@@ -197,14 +168,14 @@ void Server::Handle(uintptr_t client)
     }
     else if (path == "/receiver/log")
     {
-        if (SubscribeReceiver(client))
+        if (receiverLog.Subscribe(client))
         {
             return;
         }
     }
     else if (path == "/transmitter/log")
     {
-        if (SubscribeTransmitter(client))
+        if (transmitterLog.Subscribe(client))
         {
             return;
         }
@@ -212,6 +183,10 @@ void Server::Handle(uintptr_t client)
     else if (path == "/receiver/freq")
     {
         SendResponse(client, "200 OK", "text/plain", std::format("{:.1f}\n", world.receiver.Frequency()));
+    }
+    else if (path == "/transmitter/freq")
+    {
+        SendResponse(client, "200 OK", "text/plain", std::format("{:.1f}\n", world.transmitter.Frequency()));
     }
     else if (path == "/transmitter/send")
     {
@@ -221,8 +196,8 @@ void Server::Handle(uintptr_t client)
     }
     else if (path == "/transmitter/stop")
     {
-        Transmitter::State state = world.transmitter.Stop();
-        SendResponse(client, "200 OK", "text/plain", StateLine(state) + "\n");
+        world.transmitter.Stop();
+        SendResponse(client, "200 OK", "text/plain", "OK\n");
     }
     else if (path == "/")
     {
@@ -245,6 +220,6 @@ std::string Server::TransmitterSend(const std::string& query, std::string& statu
         status = "400 Bad Request";
         return "Invalid frequency: " + value.value_or("") + "\n";
     }
-    Transmitter::State state = world.transmitter.Send(*frequency);
-    return StateLine(state) + "\n";
+    world.transmitter.Send(*frequency);
+    return "OK\n";
 }

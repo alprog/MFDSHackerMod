@@ -7,10 +7,6 @@ constexpr std::chrono::milliseconds SAMPLE_INTERVAL(100);
 Receiver::Receiver(const Meteorite& meteorite)
     : meteorite(meteorite)
 {
-    Meteorite::FrequencySample sample = meteorite.sampleFrequency();
-    sampleTime = sample.timestamp;
-    frequency = sample.frequence;
-
     thread = std::thread([this] { Loop(); });
 }
 
@@ -26,12 +22,6 @@ void Receiver::SetListener(Listener* newListener)
     listener = newListener;
 }
 
-void Receiver::WithState(const std::function<void(const State&)>& action) const
-{
-    std::lock_guard lock(mutex);
-    action({ meteorite.getLastSignalEdgeTime(sampleTime), frequency != 0.0 });
-}
-
 double Receiver::Frequency() const
 {
     return meteorite.sampleFrequency().frequence;
@@ -39,6 +29,7 @@ double Receiver::Frequency() const
 
 void Receiver::Loop()
 {
+    int64_t lastSampleTime = meteorite.sampleFrequency().timestamp;
     while (!stop)
     {
         Meteorite::FrequencySample sample = meteorite.sampleFrequency();
@@ -46,7 +37,7 @@ void Receiver::Loop()
         int64_t edgeTime = meteorite.getLastSignalEdgeTime(sample.timestamp);
         {
             std::lock_guard lock(mutex);
-            if (listener && edgeTime > sampleTime)
+            if (listener && edgeTime > lastSampleTime)
             {
                 listener->OnEvent(EventType::SignalEdge, edgeTime, hasSignal ? 1.0 : 0.0);
             }
@@ -54,9 +45,8 @@ void Receiver::Loop()
             {
                 listener->OnEvent(EventType::FrequencySampled, sample.timestamp, sample.frequence);
             }
-            sampleTime = sample.timestamp;
-            frequency = sample.frequence;
         }
+        lastSampleTime = sample.timestamp;
 
         std::this_thread::sleep_for(SAMPLE_INTERVAL);
     }

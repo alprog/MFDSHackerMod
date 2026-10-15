@@ -2,31 +2,20 @@
 
 #include "utils/utils.h"
 
-Transmitter::Transmitter()
-    : changeTime(GetTimeNanoseconds())
-{
-}
-
 void Transmitter::SetListener(Listener* newListener)
 {
     std::lock_guard lock(mutex);
     listener = newListener;
 }
 
-void Transmitter::WithState(const std::function<void(const State&)>& action) const
+void Transmitter::Send(double frequency)
 {
-    std::lock_guard lock(mutex);
-    action({ changeTime, frequency });
+    Set(frequency);
 }
 
-Transmitter::State Transmitter::Send(double frequency)
+void Transmitter::Stop()
 {
-    return Set(frequency);
-}
-
-Transmitter::State Transmitter::Stop()
-{
-    return Set(0.0);
+    Set(0.0);
 }
 
 double Transmitter::Frequency() const
@@ -35,14 +24,15 @@ double Transmitter::Frequency() const
     return frequency;
 }
 
-Transmitter::State Transmitter::Set(double newFrequency)
+void Transmitter::Set(double newFrequency)
 {
     std::lock_guard lock(mutex);
-    frequency = newFrequency;
-    changeTime = GetTimeNanoseconds();
-    if (listener)
+    if (frequency != newFrequency)
     {
-        listener->OnEvent(EventType::FrequencyChanged, changeTime, frequency);
+        frequency = newFrequency;
+        if (listener)
+        {
+            listener->OnEvent(EventType::FrequencyChanged, GetTimeNanoseconds(), frequency);
+        }
     }
-    return { changeTime, frequency };
 }
