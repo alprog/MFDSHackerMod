@@ -63,13 +63,13 @@ async function follow(url, onLine, onStatus) {
 }
 
 const log = [];
-follow('/receiver/stream', line => {
+follow('/receiver/log', line => {
   log.push(line);
   if (log.length > LOG_LINES) log.shift();
   $('log').textContent = log.join('\n');
 }, status => $('rxConn').textContent = status);
 
-follow('/transmitter/stream', line => {
+follow('/transmitter/log', line => {
   $('tx').textContent = line;
   $('tx').className = line.includes('TX ON') ? 'on' : '';
 }, status => $('txConn').textContent = status);

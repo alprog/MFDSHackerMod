@@ -1,8 +1,7 @@
 #include "server.h"
 
-#include "stone.h"
-#include "utils.h"
-#include "web.h"
+#include "utils/utils.h"
+#include "server/web.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -10,20 +9,12 @@
 #pragma comment(lib, "ws2_32.lib")
 
 #include <charconv>
-#include <chrono>
 #include <format>
 #include <iostream>
 #include <optional>
 #include <sstream>
 
-constexpr std::chrono::milliseconds RECEIVER_INTERVAL(100);
-
 constexpr DWORD SOCKET_TIMEOUT_MS = 1000;
-
-static std::string Line(int64_t ns, const std::string& text)
-{
-    return FormatTime(ns) + "  " + text;
-}
 
 static std::optional<double> ParseFrequency(const std::string& value)
 {
@@ -50,31 +41,41 @@ static std::optional<std::string> QueryParam(const std::string& query, const std
     return std::nullopt;
 }
 
-static bool Send(uintptr_t client, const std::string& text)
-{
-    return send(client, text.data(), int(text.size()), 0) != SOCKET_ERROR;
-}
-
 static void SendResponse(uintptr_t client, const std::string& status, const std::string& type, const std::string& body)
 {
-    Send(client, std::format(
+    SendText(client, std::format(
         "HTTP/1.1 {}\r\nContent-Type: {}; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
         status, type, body.size(), body));
 }
 
-Server::Server(const std::string& host, const std::string& port)
-    : listener(INVALID_SOCKET), transmitterChangeTime(GetTimeNanoseconds())
+static std::string EventLine(EventType type, int64_t timestamp, double param)
 {
-    NStone::FrequencySample sample = NStone::sampleFrequency();
-    receiverSampleTime = sample.timestamp;
-    receiverFrequency = sample.frequence;
-
-    WSADATA data;
-    if (WSAStartup(MAKEWORD(2, 2), &data) != 0)
+    switch (type)
     {
-        std::cerr << "Cannot start Winsock\n";
-        return;
+    case EventType::SignalEdge:
+        return LogLine(timestamp, param != 0.0 ? "SIGNAL ON" : "SIGNAL OFF");
+    case EventType::FrequencySampled:
+        return LogLine(timestamp, std::format("{:.1f} Hz", param));
+    default:
+        return LogLine(timestamp, param > 0.0 ? std::format("TX ON  {:.1f} Hz", param) : "TX OFF");
     }
+}
+
+static std::string StateLine(const Receiver::State& state)
+{
+    return EventLine(EventType::SignalEdge, state.edgeTime, state.on ? 1.0 : 0.0);
+}
+
+static std::string StateLine(const Transmitter::State& state)
+{
+    return EventLine(EventType::FrequencyChanged, state.changeTime, state.frequency);
+}
+
+Server::Server(World& world, const std::string& host, const std::string& port)
+    : world(world), listener(INVALID_SOCKET)
+{
+    world.receiver.SetListener(this);
+    world.transmitter.SetListener(this);
 
     addrinfo hints{};
     hints.ai_family = AF_UNSPEC;
@@ -103,13 +104,13 @@ Server::Server(const std::string& host, const std::string& port)
         return;
     }
 
-    receiverThread = std::thread([this] { ReceiverLoop(); });
     acceptThread = std::thread([this] { AcceptLoop(); });
 }
 
 Server::~Server()
 {
-    stop = true;
+    world.receiver.SetListener(nullptr);
+    world.transmitter.SetListener(nullptr);
 
     if (listener != INVALID_SOCKET)
     {
@@ -119,24 +120,36 @@ Server::~Server()
     {
         acceptThread.join();
     }
-    if (receiverThread.joinable())
-    {
-        receiverThread.join();
-    }
-
-    for (Stream* stream : {&receiver, &transmitter})
-    {
-        for (uintptr_t client : stream->clients)
-        {
-            closesocket(client);
-        }
-    }
-    WSACleanup();
 }
 
 bool Server::Running() const
 {
     return acceptThread.joinable();
+}
+
+void Server::OnEvent(EventType type, int64_t timestamp, double param)
+{
+    (type == EventType::FrequencyChanged ? transmitterLog : receiverLog).Broadcast(EventLine(type, timestamp, param));
+}
+
+bool Server::SubscribeReceiver(uintptr_t client)
+{
+    bool subscribed = false;
+    world.receiver.WithState([&](const Receiver::State& state)
+    {
+        subscribed = receiverLog.Subscribe(client, StateLine(state));
+    });
+    return subscribed;
+}
+
+bool Server::SubscribeTransmitter(uintptr_t client)
+{
+    bool subscribed = false;
+    world.transmitter.WithState([&](const Transmitter::State& state)
+    {
+        subscribed = transmitterLog.Subscribe(client, StateLine(state));
+    });
+    return subscribed;
 }
 
 std::string Server::Api()
@@ -182,28 +195,23 @@ void Server::Handle(uintptr_t client)
     {
         SendResponse(client, "405 Method Not Allowed", "text/plain", "Only GET is supported\n");
     }
-    else if (path == "/receiver/log" || path == "/transmitter/log")
+    else if (path == "/receiver/log")
     {
-        bool isReceiver = path == "/receiver/log";
-        Stream& stream = isReceiver ? receiver : transmitter;
-        std::lock_guard lock(stream.mutex);
-        std::string headers =
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/plain; charset=utf-8\r\n"
-            "X-Content-Type-Options: nosniff\r\n"
-            "Cache-Control: no-cache\r\n"
-            "Connection: close\r\n"
-            "\r\n";
-        std::string state = (isReceiver ? ReceiverStateLine() : TransmitterStateLine()) + "\n";
-        if (Send(client, headers + state))
+        if (SubscribeReceiver(client))
         {
-            stream.clients.push_back(client);
+            return;
+        }
+    }
+    else if (path == "/transmitter/log")
+    {
+        if (SubscribeTransmitter(client))
+        {
             return;
         }
     }
     else if (path == "/receiver/freq")
     {
-        SendResponse(client, "200 OK", "text/plain", std::format("{:.1f}\n", NStone::sampleFrequency().frequence));
+        SendResponse(client, "200 OK", "text/plain", std::format("{:.1f}\n", world.receiver.Frequency()));
     }
     else if (path == "/transmitter/send")
     {
@@ -213,7 +221,8 @@ void Server::Handle(uintptr_t client)
     }
     else if (path == "/transmitter/stop")
     {
-        SendResponse(client, "200 OK", "text/plain", TransmitterStop());
+        Transmitter::State state = world.transmitter.Stop();
+        SendResponse(client, "200 OK", "text/plain", StateLine(state) + "\n");
     }
     else if (path == "/")
     {
@@ -236,72 +245,6 @@ std::string Server::TransmitterSend(const std::string& query, std::string& statu
         status = "400 Bad Request";
         return "Invalid frequency: " + value.value_or("") + "\n";
     }
-
-    std::lock_guard lock(transmitter.mutex);
-    transmitterFrequency = *frequency;
-    transmitterChangeTime = GetTimeNanoseconds();
-    std::string line = TransmitterStateLine();
-    Broadcast(transmitter, line);
-    return line + "\n";
-}
-
-std::string Server::TransmitterStop()
-{
-    std::lock_guard lock(transmitter.mutex);
-    transmitterFrequency = 0.0;
-    transmitterChangeTime = GetTimeNanoseconds();
-    std::string line = TransmitterStateLine();
-    Broadcast(transmitter, line);
-    return line + "\n";
-}
-
-std::string Server::TransmitterStateLine()
-{
-    return Line(transmitterChangeTime,
-                transmitterFrequency > 0.0 ? std::format("TX ON  {:.1f} Hz", transmitterFrequency) : "TX OFF");
-}
-
-std::string Server::ReceiverStateLine()
-{
-    int64_t edgeTime = NStone::getLastSignalEdgeTime(receiverSampleTime);
-    return Line(edgeTime, receiverFrequency != 0.0 ? "SIGNAL ON" : "SIGNAL OFF");
-}
-
-void Server::ReceiverLoop()
-{
-    while (!stop)
-    {
-        NStone::FrequencySample sample = NStone::sampleFrequency();
-        bool hasSignal = sample.frequence != 0.0;
-        int64_t edgeTime = NStone::getLastSignalEdgeTime(sample.timestamp);
-        {
-            std::lock_guard lock(receiver.mutex);
-            if (edgeTime > receiverSampleTime)
-            {
-                Broadcast(receiver, Line(edgeTime, hasSignal ? "SIGNAL ON" : "SIGNAL OFF"));
-            }
-            if (hasSignal)
-            {
-                Broadcast(receiver, Line(sample.timestamp, std::format("{:.1f} Hz", sample.frequence)));
-            }
-            receiverSampleTime = sample.timestamp;
-            receiverFrequency = sample.frequence;
-        }
-
-        std::this_thread::sleep_for(RECEIVER_INTERVAL);
-    }
-}
-
-void Server::Broadcast(Stream& stream, const std::string& line)
-{
-    std::string text = line + "\n";
-    std::erase_if(stream.clients, [&text](uintptr_t client)
-    {
-        if (!Send(client, text))
-        {
-            closesocket(client);
-            return true;
-        }
-        return false;
-    });
+    Transmitter::State state = world.transmitter.Send(*frequency);
+    return StateLine(state) + "\n";
 }

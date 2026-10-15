@@ -23,6 +23,11 @@ std::string FormatTime(int64_t ns)
     return std::format("{:%Y-%m-%d %H:%M:%S}", local);
 }
 
+std::string LogLine(int64_t ns, const std::string& text)
+{
+    return FormatTime(ns) + "  " + text;
+}
+
 std::string MakeUrl(const std::string& host, const std::string& port)
 {
     bool ipv6 = host.find(':') != std::string::npos;

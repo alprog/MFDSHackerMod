@@ -1,5 +1,8 @@
-#include "stone.h"
-#include "utils.h"
+#include "meteorite.h"
+#include "world/transmitter.h"
+#include "utils/utils.h"
+
+#include <chrono>
 
 constexpr int64_t HumanSecond = 1'000'000'000; // nanoseconds
 constexpr int64_t AlienSecond =   806'641'031; // nanoseconds
@@ -7,6 +10,8 @@ constexpr int64_t AlienEpochStartShift = 847'13'462; // nanoseconds (random)
 
 constexpr double HumanHydrogenLine = 1'420'405'751.786; // Hz
 constexpr double AlienHydrogenline = HumanHydrogenLine * AlienSecond / HumanSecond; // Hz
+
+constexpr std::chrono::milliseconds ListenInterval(100);
 
 constexpr int64_t CycleLength = 2;
 constexpr int64_t MessageLength = 1;
@@ -45,7 +50,7 @@ double getFrequencyAt(int64_t nanoseconds)
 	}
 }
 
-NStone::FrequencySample NStone::sampleFrequency()
+Meteorite::FrequencySample Meteorite::sampleFrequency() const
 {
 	int64_t nanoseconds = GetTimeNanoseconds();
 	return { nanoseconds, getFrequencyAt(nanoseconds) };
@@ -56,7 +61,7 @@ bool isMessageInterval(int64_t globalIndex)
 	return globalIndex % CycleLength < MessageLength;
 }
 
-int64_t NStone::getLastSignalEdgeTime(int64_t nanoseconds)
+int64_t Meteorite::getLastSignalEdgeTime(int64_t nanoseconds) const
 {
 	int64_t globalIndex = getGlobalIntervalIndex(nanoseconds);
 	int64_t cycleIndex = globalIndex % CycleLength;
@@ -68,4 +73,29 @@ int64_t NStone::getLastSignalEdgeTime(int64_t nanoseconds)
 	{
 		return getIntervalStartTime(globalIndex - cycleIndex + MessageLength);
 	}
+}
+
+Meteorite::Meteorite(const Transmitter& transmitter)
+	: transmitter(transmitter)
+{
+	thread = std::thread([this] { Loop(); });
+}
+
+Meteorite::~Meteorite()
+{
+	stop = true;
+	thread.join();
+}
+
+void Meteorite::Loop()
+{
+	while (!stop)
+	{
+		checkSignal(transmitter.Frequency());
+		std::this_thread::sleep_for(ListenInterval);
+	}
+}
+
+void Meteorite::checkSignal(double frequency)
+{
 }

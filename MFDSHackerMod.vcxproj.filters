@@ -1,51 +1,82 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="world">
+      <UniqueIdentifier>{6C1F3A52-4E7B-4D0A-9A61-2B8E5C3D7F01}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="server">
+      <UniqueIdentifier>{8A2D4B63-5F8C-4E1B-AB72-3C9F6D4E8A02}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="clients">
+      <UniqueIdentifier>{9B3E5C74-6A9D-4F2C-BC83-4DA07E5F9B03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{AC4F6D85-7BAE-4A3D-8D94-5EB18F6AAC04}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="client.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="source\clients\client.cpp">
+      <Filter>clients</Filter>
     </ClCompile>
-    <ClCompile Include="MFDSHackerMod.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\utils\net.cpp">
+      <Filter>utils</Filter>
     </ClCompile>
-    <ClCompile Include="server.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="source\server\logstream.cpp">
+      <Filter>server</Filter>
     </ClCompile>
-    <ClCompile Include="stone.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="source\server\server.cpp">
+      <Filter>server</Filter>
     </ClCompile>
-    <ClCompile Include="utils.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="source\utils\utils.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="source\world\meteorite.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="source\world\receiver.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="source\world\transmitter.cpp">
+      <Filter>world</Filter>
+    </ClCompile>
+    <ClCompile Include="source\world\world.cpp">
+      <Filter>world</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="client.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="source\clients\client.h">
+      <Filter>clients</Filter>
     </ClInclude>
-    <ClInclude Include="web.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="source\utils\net.h">
+      <Filter>utils</Filter>
     </ClInclude>
-    <ClInclude Include="server.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="source\server\logstream.h">
+      <Filter>server</Filter>
     </ClInclude>
-    <ClInclude Include="stone.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="source\server\server.h">
+      <Filter>server</Filter>
     </ClInclude>
-    <ClInclude Include="utils.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="source\server\web.h">
+      <Filter>server</Filter>
+    </ClInclude>
+    <ClInclude Include="source\utils\utils.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="source\world\listener.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="source\world\meteorite.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="source\world\receiver.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="source\world\transmitter.h">
+      <Filter>world</Filter>
+    </ClInclude>
+    <ClInclude Include="source\world\world.h">
+      <Filter>world</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
-#include "client.h"
-#include "server.h"
-#include "utils.h"
+#include "clients/client.h"
+#include "server/server.h"
+#include "utils/utils.h"
 
 #include <conio.h>
 
@@ -22,7 +22,8 @@ void PrintUsage()
 
 int RunServer(const std::string& host, const std::string& port)
 {
-    Server server(host, port);
+    World world;
+    Server server(world, host, port);
     if (!server.Running())
     {
         return 1;

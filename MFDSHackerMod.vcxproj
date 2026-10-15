@@ -72,6 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -88,6 +89,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -106,6 +108,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -122,6 +125,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -139,18 +143,29 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="client.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="server.cpp" />
-    <ClCompile Include="stone.cpp" />
-    <ClCompile Include="utils.cpp" />
+    <ClCompile Include="source\clients\client.cpp" />
+    <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\utils\net.cpp" />
+    <ClCompile Include="source\server\logstream.cpp" />
+    <ClCompile Include="source\server\server.cpp" />
+    <ClCompile Include="source\utils\utils.cpp" />
+    <ClCompile Include="source\world\meteorite.cpp" />
+    <ClCompile Include="source\world\receiver.cpp" />
+    <ClCompile Include="source\world\transmitter.cpp" />
+    <ClCompile Include="source\world\world.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="client.h" />
-    <ClInclude Include="web.h" />
-    <ClInclude Include="server.h" />
-    <ClInclude Include="stone.h" />
-    <ClInclude Include="utils.h" />
+    <ClInclude Include="source\clients\client.h" />
+    <ClInclude Include="source\utils\net.h" />
+    <ClInclude Include="source\server\logstream.h" />
+    <ClInclude Include="source\server\server.h" />
+    <ClInclude Include="source\server\web.h" />
+    <ClInclude Include="source\utils\utils.h" />
+    <ClInclude Include="source\world\listener.h" />
+    <ClInclude Include="source\world\meteorite.h" />
+    <ClInclude Include="source\world\receiver.h" />
+    <ClInclude Include="source\world\transmitter.h" />
+    <ClInclude Include="source\world\world.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

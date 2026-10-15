@@ -1,6 +1,7 @@
 #include "client.h"
 
-#include "utils.h"
+#include "utils/net.h"
+#include "utils/utils.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -18,12 +19,6 @@
 #include <thread>
 
 constexpr int ESC = 27;
-
-struct Winsock
-{
-    Winsock() { WSADATA data; WSAStartup(MAKEWORD(2, 2), &data); }
-    ~Winsock() { WSACleanup(); }
-};
 
 static SOCKET Connect(const std::string& host, const std::string& port)
 {
@@ -184,7 +179,7 @@ int RunReceiver(const std::string& host, const std::string& port)
     Winsock winsock;
     std::cout << "Receiver, server " << MakeUrl(host, port) << ", ESC to exit" << std::endl;
 
-    return FollowStream(host, port, "/receiver/stream",
+    return FollowStream(host, port, "/receiver/log",
                         [](const std::string& line) { std::cout << line << std::endl; },
                         [](int) {});
 }
@@ -269,5 +264,5 @@ int RunTransmitter(const std::string& host, const std::string& port)
         }
     };
 
-    return FollowStream(host, port, "/transmitter/stream", print, onKey);
+    return FollowStream(host, port, "/transmitter/log", print, onKey);
 }
