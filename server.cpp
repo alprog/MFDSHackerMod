@@ -16,20 +16,15 @@
 #include <optional>
 #include <sstream>
 
-// How often the receiver is sampled and its frequency streamed
 constexpr std::chrono::milliseconds RECEIVER_INTERVAL(100);
 
-// A client that doesn't read (or doesn't send its request) longer than this gets dropped,
-// so it can't stall a broadcast or the accept loop
 constexpr DWORD SOCKET_TIMEOUT_MS = 1000;
 
-// Log line: "2026-10-15 19:38:47.135622  SIGNAL ON"
 static std::string Line(int64_t ns, const std::string& text)
 {
     return FormatTime(ns) + "  " + text;
 }
 
-// Whole string as a frequency in Hz, or nullopt if it is not a number
 static std::optional<double> ParseFrequency(const std::string& value)
 {
     double frequency;
@@ -41,7 +36,6 @@ static std::optional<double> ParseFrequency(const std::string& value)
     return frequency;
 }
 
-// Value of name in a query string like "a=1&freq=2", or nullopt if absent
 static std::optional<std::string> QueryParam(const std::string& query, const std::string& name)
 {
     std::istringstream stream(query);
@@ -61,7 +55,6 @@ static bool Send(uintptr_t client, const std::string& text)
     return send(client, text.data(), int(text.size()), 0) != SOCKET_ERROR;
 }
 
-// Complete response, then the connection is closed by the caller
 static void SendResponse(uintptr_t client, const std::string& status, const std::string& type, const std::string& body)
 {
     Send(client, std::format(
@@ -83,7 +76,6 @@ Server::Server(const std::string& host, const std::string& port)
         return;
     }
 
-    // Host may be an IPv4/IPv6 address or a name, so resolve it
     addrinfo hints{};
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -96,8 +88,6 @@ Server::Server(const std::string& host, const std::string& port)
         return;
     }
 
-    // Exclusive: without it Windows lets another server bind the same port on a different
-    // local address (e.g. 0.0.0.0 next to 127.0.0.1), and two sources of truth would run
     listener = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
     BOOL exclusive = TRUE;
     bool listening = listener != INVALID_SOCKET
@@ -121,7 +111,6 @@ Server::~Server()
 {
     stop = true;
 
-    // Closing the listener makes the blocked accept() fail, so the thread exits
     if (listener != INVALID_SOCKET)
     {
         closesocket(listener);
@@ -135,7 +124,6 @@ Server::~Server()
         receiverThread.join();
     }
 
-    // Stream clients see the end of the stream
     for (Stream* stream : {&receiver, &transmitter})
     {
         for (uintptr_t client : stream->clients)
@@ -174,14 +162,12 @@ void Server::AcceptLoop()
     }
 }
 
-// Read one request and answer it. Stream clients stay connected, everything else is closed.
 void Server::Handle(uintptr_t client)
 {
     DWORD timeout = SOCKET_TIMEOUT_MS;
     setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
     setsockopt(client, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
 
-    // Only the request line matters: "GET /transmitter/send?freq=1420405751.8 HTTP/1.1"
     char buffer[1024];
     int size = recv(client, buffer, sizeof(buffer), 0);
     std::istringstream request(size > 0 ? std::string(buffer, size) : "");
@@ -198,8 +184,6 @@ void Server::Handle(uintptr_t client)
     }
     else if (path == "/receiver/log" || path == "/transmitter/log")
     {
-        // No Content-Length: the body lasts until the connection closes.
-        // nosniff stops the browser from buffering the start to guess the content type.
         bool isReceiver = path == "/receiver/log";
         Stream& stream = isReceiver ? receiver : transmitter;
         std::lock_guard lock(stream.mutex);
@@ -210,7 +194,6 @@ void Server::Handle(uintptr_t client)
             "Cache-Control: no-cache\r\n"
             "Connection: close\r\n"
             "\r\n";
-        // Current state first, so a client that connects later is in sync at once
         std::string state = (isReceiver ? ReceiverStateLine() : TransmitterStateLine()) + "\n";
         if (Send(client, headers + state))
         {
@@ -284,7 +267,6 @@ std::string Server::ReceiverStateLine()
     return Line(edgeTime, receiverFrequency != 0.0 ? "SIGNAL ON" : "SIGNAL OFF");
 }
 
-// Sample the stone and stream SIGNAL ON/OFF edges and the frequency while the signal is on
 void Server::ReceiverLoop()
 {
     while (!stop)
@@ -294,8 +276,6 @@ void Server::ReceiverLoop()
         int64_t edgeTime = NStone::getLastSignalEdgeTime(sample.timestamp);
         {
             std::lock_guard lock(receiver.mutex);
-            // An edge since the previous sample. Its time comes from the signal schedule,
-            // so it is exact, not the moment we noticed.
             if (edgeTime > receiverSampleTime)
             {
                 Broadcast(receiver, Line(edgeTime, hasSignal ? "SIGNAL ON" : "SIGNAL OFF"));
@@ -317,7 +297,6 @@ void Server::Broadcast(Stream& stream, const std::string& line)
     std::string text = line + "\n";
     std::erase_if(stream.clients, [&text](uintptr_t client)
     {
-        // Fails when the client has disconnected (or stopped reading for SOCKET_TIMEOUT_MS)
         if (!Send(client, text))
         {
             closesocket(client);

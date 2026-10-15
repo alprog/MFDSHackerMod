@@ -19,14 +19,12 @@
 
 constexpr int ESC = 27;
 
-// WSAStartup/WSACleanup for the scope of the object
 struct Winsock
 {
     Winsock() { WSADATA data; WSAStartup(MAKEWORD(2, 2), &data); }
     ~Winsock() { WSACleanup(); }
 };
 
-// Connected socket, or INVALID_SOCKET if the server is not reachable
 static SOCKET Connect(const std::string& host, const std::string& port)
 {
     addrinfo hints{};
@@ -39,7 +37,6 @@ static SOCKET Connect(const std::string& host, const std::string& port)
         return INVALID_SOCKET;
     }
 
-    // A name may resolve to several addresses (e.g. IPv6 and IPv4): take the first that answers
     SOCKET result = INVALID_SOCKET;
     for (addrinfo* address = info; address && result == INVALID_SOCKET; address = address->ai_next)
     {
@@ -54,8 +51,6 @@ static SOCKET Connect(const std::string& host, const std::string& port)
     return result;
 }
 
-// Send "GET path" and read the response headers. Returns the status code (-1 on error);
-// body gets whatever part of the body came with the headers.
 static int OpenGet(SOCKET socket, const std::string& host, const std::string& path, std::string& body)
 {
     std::string request = "GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\n\r\n";
@@ -78,7 +73,6 @@ static int OpenGet(SOCKET socket, const std::string& host, const std::string& pa
     }
     body = data.substr(end + 4);
 
-    // Status line: "HTTP/1.1 200 OK"
     size_t space = data.find(' ');
     return space == std::string::npos ? -1 : std::atoi(data.c_str() + space + 1);
 }
@@ -89,7 +83,6 @@ struct Response
     std::string body;
 };
 
-// One complete request; nullopt if the server is not reachable
 static std::optional<Response> Get(const std::string& host, const std::string& port, const std::string& path)
 {
     SOCKET socket = Connect(host, port);
@@ -101,7 +94,6 @@ static std::optional<Response> Get(const std::string& host, const std::string& p
     Response response;
     response.status = OpenGet(socket, host, path, response.body);
 
-    // The server closes the connection after the body
     char buffer[1024];
     for (int size; (size = recv(socket, buffer, sizeof(buffer), 0)) > 0;)
     {
@@ -116,9 +108,6 @@ static std::optional<Response> Get(const std::string& host, const std::string& p
     return response;
 }
 
-// Follow the endless stream at path: onLine is called from a background thread for every line,
-// onKey from this thread for every key except ESC. Returns 0 on ESC, 1 if the stream could not be
-// opened or the server closed it (the reason is printed).
 static int FollowStream(const std::string& host, const std::string& port, const std::string& path,
                         const std::function<void(const std::string&)>& onLine,
                         const std::function<void(int)>& onKey)
@@ -141,7 +130,6 @@ static int FollowStream(const std::string& host, const std::string& port, const 
     {
         while (true)
         {
-            // Hand out every complete line, keep the tail for the next recv
             size_t end;
             while ((end = data.find('\n')) != std::string::npos)
             {
@@ -160,7 +148,6 @@ static int FollowStream(const std::string& host, const std::string& port, const 
         ended = true;
     });
 
-    // std has no non-blocking key read, so poll the console
     bool escape = false;
     while (!ended && !escape)
     {
@@ -169,7 +156,7 @@ static int FollowStream(const std::string& host, const std::string& port, const 
             int key = _getch();
             if (key == 0 || key == 0xE0)
             {
-                _getch(); // arrows and function keys come as two codes; ignore them
+                _getch();
             }
             else if (key == ESC)
             {
@@ -184,12 +171,10 @@ static int FollowStream(const std::string& host, const std::string& port, const 
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
 
-    // Unblocks recv() in the reader
     shutdown(socket, SD_BOTH);
     reader.join();
     closesocket(socket);
 
-    // \r + \x1b[K: back to the line start and clear it (the transmitter prompt)
     std::cout << "\r\x1b[K" << (escape ? "" : "Disconnected from the server\n") << std::flush;
     return escape ? 0 : 1;
 }
@@ -210,20 +195,16 @@ int RunTransmitter(const std::string& host, const std::string& port)
     std::cout << "Transmitter, server " << MakeUrl(host, port) << "\n"
               << "Type <Hz> + Enter to transmit, off to stop, ESC to exit" << std::endl;
 
-    // The reader thread prints state lines while the user may be typing a command, so every
-    // output clears the prompt line, prints above it and redraws the prompt with the typed text
     std::mutex consoleMutex;
     std::string input;
     auto print = [&](const std::string& line)
     {
         std::lock_guard lock(consoleMutex);
-        // \r + \x1b[K: back to the line start and clear the prompt
         std::cout << "\r\x1b[K" << line << "\n> " << input << std::flush;
     };
 
     auto run = [&](const std::string& command)
     {
-        // The new state comes back through the stream; only errors are printed here
         std::string path;
         if (command == "off" || command == "0")
         {
@@ -282,7 +263,6 @@ int RunTransmitter(const std::string& host, const std::string& port)
                 return;
             }
         }
-        // Outside the lock: the request may take a moment and the reader prints meanwhile
         if (!command.empty())
         {
             run(command);

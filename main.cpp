@@ -20,7 +20,6 @@ void PrintUsage()
               << "                 the server with --host 0.0.0.0 is reachable from other machines\n";
 }
 
-// Default mode: serve until ESC
 int RunServer(const std::string& host, const std::string& port)
 {
     Server server(host, port);
@@ -49,9 +48,9 @@ int RunServer(const std::string& host, const std::string& port)
 
 enum class Mode
 {
-    Server, 
+    Server,
     Receiver,
-    Transmitter 
+    Transmitter
 };
 
 int main(int argc, char* argv[])

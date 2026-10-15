@@ -1,8 +1,5 @@
 #pragma once
 
-// GET / : receiver log + transmitter control.
-// Reads the same text/plain streams as the console clients (fetch + stream reader) and
-// sends the same transmitter commands, so all clients stay in sync through the server.
 inline constexpr const char* WEB_PAGE = R"html(<!doctype html>
 <html>
 <head>
@@ -42,7 +39,6 @@ inline constexpr const char* WEB_PAGE = R"html(<!doctype html>
 const LOG_LINES = 30;
 const $ = id => document.getElementById(id);
 
-// Read an endless text/plain stream line by line; reconnect when it breaks
 async function follow(url, onLine, onStatus) {
   while (true) {
     try {
@@ -78,7 +74,6 @@ follow('/transmitter/stream', line => {
   $('tx').className = line.includes('TX ON') ? 'on' : '';
 }, status => $('txConn').textContent = status);
 
-// The new state comes back through /transmitter/stream; only errors are shown here
 async function command(url) {
   try {
     const response = await fetch(url);
