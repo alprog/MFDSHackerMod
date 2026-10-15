@@ -69,10 +69,30 @@ follow('/receiver/log', line => {
   $('log').textContent = log.join('\n');
 }, status => $('rxConn').textContent = status);
 
+let txLineReceived = false;
+
+function showTransmitter(text, on) {
+  $('tx').textContent = text;
+  $('tx').className = on ? 'on' : '';
+}
+
+async function loadTransmitterFrequency() {
+  txLineReceived = false;
+  try {
+    const frequency = parseFloat(await (await fetch('/transmitter/freq')).text());
+    if (!txLineReceived) {
+      showTransmitter(frequency > 0 ? `TX ON  ${frequency.toFixed(1)} Hz` : 'TX OFF', frequency > 0);
+    }
+  } catch (e) {}
+}
+
 follow('/transmitter/log', line => {
-  $('tx').textContent = line;
-  $('tx').className = line.includes('TX ON') ? 'on' : '';
-}, status => $('txConn').textContent = status);
+  txLineReceived = true;
+  showTransmitter(line, line.includes('TX ON'));
+}, status => {
+  $('txConn').textContent = status;
+  if (status === '') loadTransmitterFrequency();
+});
 
 async function command(url) {
   try {

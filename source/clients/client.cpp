@@ -1,6 +1,5 @@
 #include "client.h"
 
-#include "utils/net.h"
 #include "utils/utils.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -12,15 +11,22 @@
 
 #include <atomic>
 #include <chrono>
-#include <functional>
 #include <iostream>
-#include <mutex>
-#include <optional>
 #include <thread>
 
 constexpr int ESC = 27;
 
-static SOCKET Connect(const std::string& host, const std::string& port)
+Client::Client(const std::string& host, const std::string& port)
+    : host(host), port(port)
+{
+}
+
+std::string Client::Url() const
+{
+    return MakeUrl(host, port);
+}
+
+uintptr_t Client::Connect() const
 {
     addrinfo hints{};
     hints.ai_family = AF_UNSPEC;
@@ -46,10 +52,10 @@ static SOCKET Connect(const std::string& host, const std::string& port)
     return result;
 }
 
-static int OpenGet(SOCKET socket, const std::string& host, const std::string& path, std::string& body)
+int Client::OpenGet(uintptr_t socket, const std::string& path, std::string& body) const
 {
     std::string request = "GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\n\r\n";
-    if (send(socket, request.data(), int(request.size()), 0) == SOCKET_ERROR)
+    if (!SendText(socket, request))
     {
         return -1;
     }
@@ -72,22 +78,16 @@ static int OpenGet(SOCKET socket, const std::string& host, const std::string& pa
     return space == std::string::npos ? -1 : std::atoi(data.c_str() + space + 1);
 }
 
-struct Response
+std::optional<Client::Response> Client::Get(const std::string& path) const
 {
-    int status;
-    std::string body;
-};
-
-static std::optional<Response> Get(const std::string& host, const std::string& port, const std::string& path)
-{
-    SOCKET socket = Connect(host, port);
+    uintptr_t socket = Connect();
     if (socket == INVALID_SOCKET)
     {
         return std::nullopt;
     }
 
     Response response;
-    response.status = OpenGet(socket, host, path, response.body);
+    response.status = OpenGet(socket, path, response.body);
 
     char buffer[1024];
     for (int size; (size = recv(socket, buffer, sizeof(buffer), 0)) > 0;)
@@ -103,16 +103,15 @@ static std::optional<Response> Get(const std::string& host, const std::string& p
     return response;
 }
 
-static int FollowStream(const std::string& host, const std::string& port, const std::string& path,
-                        const std::function<void(const std::string&)>& onLine,
-                        const std::function<void(int)>& onKey)
+int Client::FollowStream(const std::string& path,
+                         const std::function<void(const std::string&)>& onLine,
+                         const std::function<void(int)>& onKey) const
 {
-    SOCKET socket = Connect(host, port);
+    uintptr_t socket = Connect();
     std::string data;
-    if (socket == INVALID_SOCKET || OpenGet(socket, host, path, data) != 200)
+    if (socket == INVALID_SOCKET || OpenGet(socket, path, data) != 200)
     {
-        std::cerr << "Cannot connect to the server at " << MakeUrl(host, port)
-                  << ", start it first: MFDSHackerMod.exe\n";
+        std::cerr << "Cannot connect to the server at " << Url() << ", start it first: MFDSHackerMod.exe\n";
         if (socket != INVALID_SOCKET)
         {
             closesocket(socket);
@@ -172,97 +171,4 @@ static int FollowStream(const std::string& host, const std::string& port, const 
 
     std::cout << "\r\x1b[K" << (escape ? "" : "Disconnected from the server\n") << std::flush;
     return escape ? 0 : 1;
-}
-
-int RunReceiver(const std::string& host, const std::string& port)
-{
-    Winsock winsock;
-    std::cout << "Receiver, server " << MakeUrl(host, port) << ", ESC to exit" << std::endl;
-
-    return FollowStream(host, port, "/receiver/log",
-                        [](const std::string& line) { std::cout << line << std::endl; },
-                        [](int) {});
-}
-
-int RunTransmitter(const std::string& host, const std::string& port)
-{
-    Winsock winsock;
-    std::cout << "Transmitter, server " << MakeUrl(host, port) << "\n"
-              << "Type <Hz> + Enter to transmit, off to stop, ESC to exit" << std::endl;
-
-    std::mutex consoleMutex;
-    std::string input;
-    auto print = [&](const std::string& line)
-    {
-        std::lock_guard lock(consoleMutex);
-        std::cout << "\r\x1b[K" << line << "\n> " << input << std::flush;
-    };
-
-    auto run = [&](const std::string& command)
-    {
-        std::string path;
-        if (command == "off" || command == "0")
-        {
-            path = "/transmitter/stop";
-        }
-        else if (command.find_first_not_of("0123456789.eE+-") == std::string::npos)
-        {
-            path = "/transmitter/send?freq=" + command;
-        }
-        else
-        {
-            print("Unknown command: " + command + " (<Hz> or off)");
-            return;
-        }
-
-        std::optional<Response> response = Get(host, port, path);
-        if (!response)
-        {
-            print("Server is not reachable");
-        }
-        else if (response->status != 200)
-        {
-            std::string body = response->body;
-            while (!body.empty() && body.back() == '\n')
-            {
-                body.pop_back();
-            }
-            print(body);
-        }
-    };
-
-    auto onKey = [&](int key)
-    {
-        std::string command;
-        {
-            std::lock_guard lock(consoleMutex);
-            if (key == '\r')
-            {
-                command = input;
-                input.clear();
-                std::cout << "\r\x1b[K> " << std::flush;
-            }
-            else if (key == '\b')
-            {
-                if (!input.empty())
-                {
-                    input.pop_back();
-                    std::cout << "\b \b" << std::flush;
-                }
-                return;
-            }
-            else if (key >= ' ' && key <= '~')
-            {
-                input += char(key);
-                std::cout << char(key) << std::flush;
-                return;
-            }
-        }
-        if (!command.empty())
-        {
-            run(command);
-        }
-    };
-
-    return FollowStream(host, port, "/transmitter/log", print, onKey);
 }
