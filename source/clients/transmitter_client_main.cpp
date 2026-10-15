@@ -1,5 +1,7 @@
 #include "clients/client.h"
 
+#include <cstdlib>
+#include <format>
 #include <iostream>
 #include <mutex>
 #include <optional>
@@ -9,7 +11,7 @@ int TransmitterClientMain(const std::string& host, const std::string& port)
 {
     Client client(host, port);
     std::cout << "Transmitter, server " << client.Url() << "\n"
-              << "Type <Hz> + Enter to transmit, off to stop, ESC to exit" << std::endl;
+              << "Type <Hz> to transmit" << std::endl;
 
     std::mutex consoleMutex;
     std::string input;
@@ -22,7 +24,7 @@ int TransmitterClientMain(const std::string& host, const std::string& port)
     auto run = [&](const std::string& command)
     {
         std::string path;
-        if (command == "off" || command == "0")
+        if (command == "stop" || command == "0")
         {
             path = "/transmitter/stop";
         }
@@ -32,7 +34,7 @@ int TransmitterClientMain(const std::string& host, const std::string& port)
         }
         else
         {
-            print("Unknown command: " + command + " (<Hz> or off)");
+            print("Unknown command: " + command + " (<Hz> or stop)");
             return;
         }
 
@@ -70,20 +72,29 @@ int TransmitterClientMain(const std::string& host, const std::string& port)
                     input.pop_back();
                     std::cout << "\b \b" << std::flush;
                 }
-                return;
             }
             else if (key >= ' ' && key <= '~')
             {
                 input += char(key);
                 std::cout << char(key) << std::flush;
-                return;
             }
         }
         if (!command.empty())
         {
             run(command);
         }
+        return true;
     };
 
-    return client.FollowStream("/transmitter/log", print, onKey);
+    auto printState = [&]
+    {
+        std::optional<Client::Response> response = client.Get("/transmitter/freq");
+        if (response && response->status == 200)
+        {
+            double frequency = std::atof(response->body.c_str());
+            print(frequency > 0.0 ? std::format("TX ON  {:.1f} Hz", frequency) : "TX OFF");
+        }
+    };
+
+    return client.FollowStream("/transmitter/log", print, onKey, printState);
 }

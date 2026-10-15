@@ -22,7 +22,8 @@ public:
     std::optional<Response> Get(const std::string& path) const;
     int FollowStream(const std::string& path,
                      const std::function<void(const std::string&)>& onLine,
-                     const std::function<void(int)>& onKey) const;
+                     const std::function<bool(int)>& onKey,
+                     const std::function<void()>& onConnected = {}) const;
 
 private:
     uintptr_t Connect() const;

@@ -14,7 +14,6 @@
 #include <iostream>
 #include <thread>
 
-constexpr int ESC = 27;
 
 Client::Client(const std::string& host, const std::string& port)
     : host(host), port(port)
@@ -105,7 +104,8 @@ std::optional<Client::Response> Client::Get(const std::string& path) const
 
 int Client::FollowStream(const std::string& path,
                          const std::function<void(const std::string&)>& onLine,
-                         const std::function<void(int)>& onKey) const
+                         const std::function<bool(int)>& onKey,
+                         const std::function<void()>& onConnected) const
 {
     uintptr_t socket = Connect();
     std::string data;
@@ -117,6 +117,11 @@ int Client::FollowStream(const std::string& path,
             closesocket(socket);
         }
         return 1;
+    }
+
+    if (onConnected)
+    {
+        onConnected();
     }
 
     std::atomic<bool> ended = false;
@@ -142,8 +147,8 @@ int Client::FollowStream(const std::string& path,
         ended = true;
     });
 
-    bool escape = false;
-    while (!ended && !escape)
+    bool stopped = false;
+    while (!ended && !stopped)
     {
         while (_kbhit())
         {
@@ -152,14 +157,10 @@ int Client::FollowStream(const std::string& path,
             {
                 _getch();
             }
-            else if (key == ESC)
+            else if (!onKey(key))
             {
-                escape = true;
+                stopped = true;
                 break;
-            }
-            else
-            {
-                onKey(key);
             }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -169,6 +170,6 @@ int Client::FollowStream(const std::string& path,
     reader.join();
     closesocket(socket);
 
-    std::cout << "\r\x1b[K" << (escape ? "" : "Disconnected from the server\n") << std::flush;
-    return escape ? 0 : 1;
+    std::cout << "\r\x1b[K" << (stopped ? "" : "Disconnected from the server\n") << std::flush;
+    return stopped ? 0 : 1;
 }

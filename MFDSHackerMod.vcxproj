@@ -144,8 +144,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\clients\client.cpp" />
-    <ClCompile Include="source\clients\receiver_main.cpp" />
-    <ClCompile Include="source\clients\transmitter_main.cpp" />
+    <ClCompile Include="source\clients\receiver_client_main.cpp" />
+    <ClCompile Include="source\clients\transmitter_client_main.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\utils\net.cpp" />
     <ClCompile Include="source\server\logstream.cpp" />

@@ -18,10 +18,10 @@
     <ClCompile Include="source\clients\client.cpp">
       <Filter>clients</Filter>
     </ClCompile>
-    <ClCompile Include="source\clients\receiver_main.cpp">
+    <ClCompile Include="source\clients\receiver_client_main.cpp">
       <Filter>clients</Filter>
     </ClCompile>
-    <ClCompile Include="source\clients\transmitter_main.cpp">
+    <ClCompile Include="source\clients\transmitter_client_main.cpp">
       <Filter>clients</Filter>
     </ClCompile>
     <ClCompile Include="source\main.cpp" />

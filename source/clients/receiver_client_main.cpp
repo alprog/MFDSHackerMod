@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 
+constexpr int ESC = 27;
+
 int ReceiverClientMain(const std::string& host, const std::string& port)
 {
     Client client(host, port);
@@ -10,5 +12,5 @@ int ReceiverClientMain(const std::string& host, const std::string& port)
 
     return client.FollowStream("/receiver/log",
                                [](const std::string& line) { std::cout << line << std::endl; },
-                               [](int) {});
+                               [](int key) { return key != ESC; });
 }
