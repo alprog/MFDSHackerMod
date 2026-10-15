@@ -23,8 +23,8 @@ int ServerMain(const std::string& host, const std::string& port)
               << "Web Page: " << url << "/\n\n"
               << "API:\n" << Server::Api() << "\n"
               << "Console Clients:\n"
-              << "  stone.exe --receiver\n"
-              << "  stone.exe --transmitter\n"
+              << "  meteorlink.exe --receiver\n"
+              << "  meteorlink.exe --transmitter\n"
               << "  (add --host / --port if the server is not on 127.0.0.1:8080)\n\n"
               << "ESC to stop the server" << std::endl;
 

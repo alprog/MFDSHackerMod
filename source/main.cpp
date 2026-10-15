@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
         else
         {
             std::cerr << "Invalid argument: " << arg << "\n";
-            std::cout << "Usage: stone.exe [--receiver | --transmitter] [--host <address>] [--port <number>]\n"
+            std::cout << "Usage: meteorlink.exe [--receiver | --transmitter] [--host <address>] [--port <number>]\n"
                 << "  (none)         run communication server with meteorite\n"
                 << "  --receiver     console client displaying receiver stream\n"
                 << "  --transmitter  console client controlling transmitter \n"

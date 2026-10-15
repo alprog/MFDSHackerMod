@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="MFDSHackerMod.vcxproj" Id="50db82e0-d938-4107-be4d-8acc03d126ec" />
+  <Project Path="meteorlink.vcxproj" Id="50db82e0-d938-4107-be4d-8acc03d126ec" />
 </Solution>

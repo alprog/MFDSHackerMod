@@ -111,7 +111,7 @@ int Client::FollowStream(const std::string& path,
     std::string data;
     if (socket == INVALID_SOCKET || OpenGet(socket, path, data) != 200)
     {
-        std::cerr << "Cannot connect to the server at " << Url() << ", start it first: MFDSHackerMod.exe\n";
+        std::cerr << "Cannot connect to the server at " << Url() << ", start it first: meteorlink.exe\n";
         if (socket != INVALID_SOCKET)
         {
             closesocket(socket);
