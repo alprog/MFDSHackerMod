@@ -5,7 +5,7 @@ inline constexpr const char* WEB_PAGE = R"html(<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MFDS Hacker</title>
+<title>MeteorLink</title>
 <style>
   :root { --bg: #fff; --fg: #111; --dim: #777; --line: #ddd; --on: #0a7d32; --err: #c62828; }
   @media (prefers-color-scheme: dark) {
