@@ -6,24 +6,40 @@ Puzzle::Puzzle(std::initializer_list<Message> messages)
 	: maxResponseLength{0}
 {
 	message = *messages.begin();
-	responses.assign(messages.begin() + 1, messages.end());
-	for (auto response : responses)
+	validResponses.assign(messages.begin() + 1, messages.end());
+	for (auto response : validResponses)
 	{
 		maxResponseLength = std::max(maxResponseLength, response.size());
 	}
 	cycleLength = message.size() + maxResponseLength;
 }
 
-double Puzzle::getFreqAt(int32_t localIntervalIndex) const
+bool Puzzle::isMessagePhase(int32_t intervalIndex) const
 {
-	int64_t index = localIntervalIndex % cycleLength;
-	if (index < message.size())
+	return intervalIndex >= 0 && intervalIndex < message.size();
+}
+
+double Puzzle::getFreqAt(int32_t intervalIndex) const
+{
+	if (isMessagePhase(intervalIndex))
 	{
-		int32_t signalOffset = message[index];
-		return NFrequency::fromSignalOffset(signalOffset);
+		int32_t code = message[intervalIndex];
+		return NAlienCode::toHumanFrequency(code);
 	}
 	else
 	{
 		return 0.0;
 	}
+}
+
+bool Puzzle::checkResponse(Message& response) const
+{
+	for (auto& validResponse : validResponses)
+	{
+		if (response == validResponse)
+		{
+			return true;
+		}
+	}
+	return false;
 }

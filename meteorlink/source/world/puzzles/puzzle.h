@@ -13,12 +13,16 @@ public:
 
 	size_t getMessageLength() const { return message.size(); }
 	size_t getGapLength() const { return maxResponseLength; }
+	size_t getCycleLength() const { return cycleLength; }
 	
-	double getFreqAt(int32_t localIntervalIndex) const;
+	bool isMessagePhase(int32_t intervalIndex) const;
+	double getFreqAt(int32_t intervalIndex) const;
+	
+	bool checkResponse(Message& response) const;
 
 private:
 	Message message;
-	std::vector<Message> responses;
+	std::vector<Message> validResponses;
 	size_t maxResponseLength;
 	size_t cycleLength;
 };
