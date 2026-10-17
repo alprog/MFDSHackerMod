@@ -11,9 +11,9 @@ class Puzzle
 public:
 	Puzzle(std::initializer_list<Message> messages);
 
-	size_t getMessageLength() const { return message.size(); }
-	size_t getGapLength() const { return maxResponseLength; }
-	size_t getCycleLength() const { return cycleLength; }
+	int32_t getMessageLength() const { return message.size(); }
+	int32_t getGapLength() const { return maxResponseLength; }
+	int32_t getCycleLength() const { return cycleLength; }
 	
 	bool isMessagePhase(int32_t intervalIndex) const;
 	double getFreqAt(int32_t intervalIndex) const;
@@ -23,6 +23,6 @@ public:
 private:
 	Message message;
 	std::vector<Message> validResponses;
-	size_t maxResponseLength;
-	size_t cycleLength;
+	int32_t maxResponseLength;
+	int32_t cycleLength;
 };

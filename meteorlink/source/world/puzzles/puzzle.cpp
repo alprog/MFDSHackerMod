@@ -9,7 +9,7 @@ Puzzle::Puzzle(std::initializer_list<Message> messages)
 	validResponses.assign(messages.begin() + 1, messages.end());
 	for (auto response : validResponses)
 	{
-		maxResponseLength = std::max(maxResponseLength, response.size());
+		maxResponseLength = std::max(maxResponseLength, (int32_t)response.size());
 	}
 	cycleLength = message.size() + maxResponseLength;
 }
