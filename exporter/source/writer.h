@@ -17,7 +17,7 @@ public:
 private:
     void writeMessageLine(std::string_view hexString);
     void writeMessage(std::string_view signalString);
-    void writeHexFreq(std::string_view hexFreq);
+    void writeFreq(std::string_view hexFreq);
 
     std::ofstream writeStream;
 };

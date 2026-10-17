@@ -1,7 +1,6 @@
 #include "writer.h"
 
-#include <algorithm>
-#include <cctype>
+#include <cstdint>
 #include <string>
 
 Writer::Writer(const std::filesystem::path& path) 
@@ -54,24 +53,22 @@ void Writer::writeMessage(std::string_view hexString)
         throw "message length is not a multiple of 8";
     }
 
-    std::string hex(hexString);
-    std::transform(hex.begin(), hex.end(), hex.begin(), [](unsigned char c) { return char(std::toupper(c)); });
-
-    for (size_t group = 0; group < hex.size(); group += 8)
+    for (size_t group = 0; group < hexString.size(); group += 8)
     {
         if (group > 0)
         {
             writeStream << ", ";
         }
-        writeHexFreq(std::string_view(hex).substr(group, 8));
+        writeFreq(hexString.substr(group, 8));
     }
 }
 
-void Writer::writeHexFreq(std::string_view hexFreq)
+void Writer::writeFreq(std::string_view hexFreq)
 {
-    writeStream << "0x";
+    std::string bigEndian;
     for (size_t byte = 4; byte-- > 0;) // little indian
     {
-        writeStream << hexFreq.substr(byte * 2, 2);
+        bigEndian += hexFreq.substr(byte * 2, 2);
     }
+    writeStream << int32_t(std::stoul(bigEndian, nullptr, 16));
 }

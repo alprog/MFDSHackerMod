@@ -3,9 +3,14 @@
 
 #include <iostream>
 
-int main()
+int main(int argc, char* argv[])
 {
-    constexpr const char* srcFolderPath = "C:/projects/deepspace/ExportedProject";
+    if (argc < 2)
+    {
+        std::cerr << "Usage: exporter <srcFolderPath>\n";
+        return 1;
+    }
+    const char* srcFolderPath = argv[1];
     constexpr const char* dstFilePath = "../meteorlink/source/world/puzzles.h";
 
     std::vector<Puzzle> puzzles = Reader().readPuzzles(srcFolderPath);
