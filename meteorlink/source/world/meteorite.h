@@ -16,6 +16,7 @@ public:
 	{
 		int64_t timestamp;
 		double frequence;
+		int64_t intervalStart;
 	};
 
 	FrequencySample sampleFrequency() const;

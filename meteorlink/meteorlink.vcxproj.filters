@@ -52,6 +52,8 @@
     <ClCompile Include="source\world\world.cpp">
       <Filter>world</Filter>
     </ClCompile>
+    <ClCompile Include="source\world\puzzles\puzzle.cpp" />
+    <ClCompile Include="source\world\puzzles\puzzles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\clients\client.h">
@@ -84,11 +86,12 @@
     <ClInclude Include="source\world\transmitter.h">
       <Filter>world</Filter>
     </ClInclude>
-    <ClInclude Include="source\world\puzzles.h">
+    <ClInclude Include="source\world\puzzles\puzzles.h">
       <Filter>world</Filter>
     </ClInclude>
     <ClInclude Include="source\world\world.h">
       <Filter>world</Filter>
     </ClInclude>
+    <ClInclude Include="source\world\puzzles\puzzle.h" />
   </ItemGroup>
 </Project>

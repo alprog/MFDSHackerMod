@@ -14,15 +14,9 @@ Writer::Writer(const std::filesystem::path& path)
 
 void Writer::writePuzzles(const std::vector<Puzzle>& puzzles)
 {
-    writeStream << "#pragma once\n";
+    writeStream << "#include \"puzzles.h\"\n";
     writeStream << "\n";
-    writeStream << "#include <cstdint>\n";
-    writeStream << "#include <vector>\n";
-    writeStream << "\n";
-    writeStream << "using Message = std::vector<int32_t>;\n";
-    writeStream << "using Puzzle = std::vector<Message>;\n";
-    writeStream << "\n";
-    writeStream << "inline const std::vector<Puzzle> puzzles = {\n";
+    writeStream << "std::vector<Puzzle> puzzles = {\n";
     for (size_t i = 0; i < puzzles.size(); i++)
     {
         const Puzzle& puzzle = puzzles[i];
@@ -36,7 +30,9 @@ void Writer::writePuzzles(const std::vector<Puzzle>& puzzles)
         }
         writeStream << "\t},\n";
     }
-    writeStream << "};\n";
+    writeStream << "};\n\n";
+
+    writeStream << "const std::vector<Puzzle>& getPuzzles() { return puzzles; }";
 }
 
 void Writer::writeMessageLine(std::string_view hexString)

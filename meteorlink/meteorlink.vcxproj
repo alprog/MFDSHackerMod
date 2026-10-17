@@ -157,6 +157,12 @@
     <ClCompile Include="source\server\server_main.cpp" />
     <ClCompile Include="source\utils\utils.cpp" />
     <ClCompile Include="source\world\meteorite.cpp" />
+    <ClCompile Include="source\world\puzzles\puzzle.cpp" />
+    <ClCompile Include="source\world\puzzles\puzzles.cpp">
+      <Optimization Condition="'$(Configuration)'=='Debug'">MaxSpeed</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)'=='Debug'">Default</BasicRuntimeChecks>
+      <DebugInformationFormat Condition="'$(Configuration)'=='Debug'">None</DebugInformationFormat>
+    </ClCompile>
     <ClCompile Include="source\world\receiver.cpp" />
     <ClCompile Include="source\world\transmitter.cpp" />
     <ClCompile Include="source\world\world.cpp" />
@@ -170,9 +176,10 @@
     <ClInclude Include="source\utils\utils.h" />
     <ClInclude Include="source\world\listener.h" />
     <ClInclude Include="source\world\meteorite.h" />
+    <ClInclude Include="source\world\puzzles\puzzle.h" />
     <ClInclude Include="source\world\receiver.h" />
     <ClInclude Include="source\world\transmitter.h" />
-    <ClInclude Include="source\world\puzzles.h" />
+    <ClInclude Include="source\world\puzzles\puzzles.h" />
     <ClInclude Include="source\world\world.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

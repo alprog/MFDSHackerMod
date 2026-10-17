@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
         return 1;
     }
     const char* srcFolderPath = argv[1];
-    constexpr const char* dstFilePath = "../meteorlink/source/world/puzzles.h";
+    constexpr const char* dstFilePath = "../meteorlink/source/world/puzzles/puzzles.cpp";
 
     std::vector<Puzzle> puzzles = Reader().readPuzzles(srcFolderPath);
     Writer(dstFilePath).writePuzzles(puzzles);

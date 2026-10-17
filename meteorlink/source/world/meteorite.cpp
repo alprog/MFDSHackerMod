@@ -2,6 +2,7 @@
 #include "world/transmitter.h"
 #include "utils/utils.h"
 
+#include "puzzles/puzzles.h"
 #include <chrono>
 
 constexpr int64_t HumanSecond = 1'000'000'000; // nanoseconds
@@ -53,6 +54,7 @@ double getFrequencyAt(int64_t nanoseconds)
 Meteorite::FrequencySample Meteorite::sampleFrequency() const
 {
 	int64_t nanoseconds = GetTimeNanoseconds();
+	int64_t globalIntervalIndex = getGlobalIntervalIndex(nanoseconds);
 	return { nanoseconds, getFrequencyAt(nanoseconds) };
 }
 
