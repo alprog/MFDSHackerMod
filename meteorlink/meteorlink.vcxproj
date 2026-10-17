@@ -172,6 +172,7 @@
     <ClInclude Include="source\world\meteorite.h" />
     <ClInclude Include="source\world\receiver.h" />
     <ClInclude Include="source\world\transmitter.h" />
+    <ClInclude Include="source\world\puzzles.h" />
     <ClInclude Include="source\world\world.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

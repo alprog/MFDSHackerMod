@@ -2,3 +2,4 @@
 *.user
 build
 obj
+meteorlink/source/world/puzzles.h

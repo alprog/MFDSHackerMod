@@ -3,5 +3,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="meteorlink.vcxproj" Id="50db82e0-d938-4107-be4d-8acc03d126ec" />
+  <Project Path="meteorlink/meteorlink.vcxproj" Id="50db82e0-d938-4107-be4d-8acc03d126ec" />
+  <Project Path="exporter/exporter.vcxproj" Id="eb910559-cf58-4265-ab20-42693ce7dac2" />
 </Solution>

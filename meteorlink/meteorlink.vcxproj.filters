@@ -84,6 +84,9 @@
     <ClInclude Include="source\world\transmitter.h">
       <Filter>world</Filter>
     </ClInclude>
+    <ClInclude Include="source\world\puzzles.h">
+      <Filter>world</Filter>
+    </ClInclude>
     <ClInclude Include="source\world\world.h">
       <Filter>world</Filter>
     </ClInclude>
