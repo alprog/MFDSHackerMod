@@ -54,6 +54,7 @@
     </ClCompile>
     <ClCompile Include="source\world\puzzles\puzzle.cpp" />
     <ClCompile Include="source\world\puzzles\puzzles.cpp" />
+    <ClCompile Include="source\world\alien_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\clients\client.h">
@@ -93,5 +94,6 @@
       <Filter>world</Filter>
     </ClInclude>
     <ClInclude Include="source\world\puzzles\puzzle.h" />
+    <ClInclude Include="source\world\alien_utils.h" />
   </ItemGroup>
 </Project>

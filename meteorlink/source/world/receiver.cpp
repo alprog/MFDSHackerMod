@@ -1,6 +1,7 @@
 #include "receiver.h"
 
 #include <chrono>
+#include "alien_utils.h"
 
 constexpr std::chrono::milliseconds SAMPLE_INTERVAL(100);
 
@@ -29,24 +30,21 @@ double Receiver::Frequency() const
 
 void Receiver::Loop()
 {
-    int64_t lastSampleTime = meteorite.sampleFrequency().timestamp;
+    auto lastSample = meteorite.sampleFrequency();
     while (!stop)
     {
-        Meteorite::FrequencySample sample = meteorite.sampleFrequency();
-        bool hasSignal = sample.frequence != 0.0;
-        int64_t edgeTime = meteorite.getLastSignalEdgeTime(sample.timestamp);
+        auto sample = meteorite.sampleFrequency();
+        bool hasSignal = sample.hasSignal();
+        if (hasSignal != lastSample.hasSignal())
         {
-            std::lock_guard lock(mutex);
-            if (listener && edgeTime > lastSampleTime)
-            {
-                listener->OnEvent(EventType::SignalEdge, edgeTime, hasSignal ? 1.0 : 0.0);
-            }
-            if (listener && hasSignal)
-            {
-                listener->OnEvent(EventType::FrequencySampled, sample.timestamp, sample.frequence);
-            }
+            int64_t edgeTime = NAlienTime::getIntervalStartTime(sample.timestamp);
+            listener->OnEvent(EventType::SignalEdge, edgeTime, hasSignal ? 1.0 : 0.0);
         }
-        lastSampleTime = sample.timestamp;
+        if (listener && sample.hasSignal())
+        {
+            listener->OnEvent(EventType::FrequencySampled, sample.timestamp, sample.frequence);
+        }
+        lastSample = sample;
 
         std::this_thread::sleep_for(SAMPLE_INTERVAL);
     }

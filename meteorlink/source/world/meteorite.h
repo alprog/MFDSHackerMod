@@ -5,6 +5,7 @@
 #include <thread>
 
 class Transmitter;
+class Puzzle;
 
 class Meteorite
 {
@@ -16,16 +17,18 @@ public:
 	{
 		int64_t timestamp;
 		double frequence;
-		int64_t intervalStart;
+
+		bool hasSignal() const { return frequence != 0.0; }
 	};
 
 	FrequencySample sampleFrequency() const;
 	
-	int64_t getLastSignalEdgeTime(int64_t nanoseconds) const;
-
 private:
 	void Loop();
 	void checkSignal(double frequency);
+
+	const Puzzle* pPuzzle = nullptr;
+	int64_t puzzleStartIntervalIndex = 0;
 
 	const Transmitter& transmitter;
 	std::atomic<bool> stop = false;
